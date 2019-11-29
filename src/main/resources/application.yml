@@ -1,0 +1,8 @@
+
+com:
+  example:
+      consentchannel:
+        # Internal client sample, e.g. internet banking
+        internalClientId: Le8cw0g8ZkPZnicEIbNZPy9DPUNXHQVM
+        internalClientSecret: sLELKL71Lb5SR3LA
+        oauth: https://adfdfd/oauth
