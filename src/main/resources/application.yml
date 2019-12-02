@@ -5,4 +5,7 @@ com:
         # Internal client sample, e.g. internet banking
         internalClientId: Le8cw0g8ZkPZnicEIbNZPy9DPUNXHQVM
         internalClientSecret: sLELKL71Lb5SR3LA
-        oauth: https://adfdfd/oauth
+        oauthUri: http://poc-pa/oauth
+        consentMgtUri: http://poc-pa/consents
+server:
+  port: 8999

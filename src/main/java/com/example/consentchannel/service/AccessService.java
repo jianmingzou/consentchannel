@@ -1,6 +1,6 @@
 package com.example.consentchannel.service;
 
-import com.example.consentchannel.config.CredentialContext;
+import com.example.consentchannel.configuration.CredentialContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.net.URISyntaxException;
