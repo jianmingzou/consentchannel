@@ -14,25 +14,11 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@EnableConfigurationProperties(CredentialContext.class)
 public class ConsentChannelConfig {
 
 
   @Bean
   RestTemplate restTemplate() {
-
-//    RestTemplateBuilder builder = new RestTemplateBuilder();
-
-//    List<HttpMessageConverter<?>> httpMessageConverters = new ArrayList<>();
-//    httpMessageConverters.add(new FormHttpMessageConverter());
-//    httpMessageConverters.add(new StringHttpMessageConverter());
-
-    /*
-     * Create a RestTemplate that uses a request factory that references
-     * our custom HttpClient
-     */
-//    return builder.additionalMessageConverters(httpMessageConverters).
-//            requestFactory(new ClientHttpRequestFactorySupplier()).build();
 
     return new RestTemplate();
   }
