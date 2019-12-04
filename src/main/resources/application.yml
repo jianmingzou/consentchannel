@@ -8,5 +8,5 @@ com:
       oauthUri: http://poc-pa/oauth
       consentMgtUri: http://localhost:8080/consents
 server:
-  port: 8999
+  port: 8090
 
