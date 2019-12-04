@@ -9,4 +9,5 @@ public class ConsentAuthorisationResponse {
 
     @JsonProperty("redirect_uri")
     String redirectUri;
+
 }
