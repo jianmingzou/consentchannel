@@ -5,8 +5,12 @@ com:
       # Internal client sample, e.g. internet banking
       internalClientId: Le8cw0g8ZkPZnicEIbNZPy9DPUNXHQVM
       internalClientSecret: sLELKL71Lb5SR3LA
-      oauthUri: http://poc-pa/oauth
+      oauthUri: http://localhost:9000/oauth
       consentMgtUri: http://localhost:8080/consents
 server:
   port: 8090
+
+spring:
+  application:
+    name: consentchannel
 
