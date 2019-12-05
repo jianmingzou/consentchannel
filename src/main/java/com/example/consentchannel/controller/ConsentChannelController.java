@@ -270,13 +270,13 @@ public class ConsentChannelController {
                 return response.getBody().get("auth_code").asText();
             }
 
-            return "XXXX";
+            return "ABCDEF";
 
         } catch (Exception e) {
 //            LOGGER.error("Error:", e);
 //            throw new Exception("error to retrieve auth code");
             LOGGER.info("cannot get a auth code");
-            return "XXXXXX";
+            return "ABCDEF";
         }
 
     }
