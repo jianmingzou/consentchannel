@@ -5,8 +5,9 @@ com:
       # Internal client sample, e.g. internet banking
       internalClientId: Le8cw0g8ZkPZnicEIbNZPy9DPUNXHQVM
       internalClientSecret: sLELKL71Lb5SR3LA
-      oauthUri: http://localhost:9000/oauth
+      oauthUri: https://ec2-34-246-195-42.eu-west-1.compute.amazonaws.com:3000/as
       consentMgtUri: http://localhost:8080/consents
+      keystore:
 server:
   port: 8090
 

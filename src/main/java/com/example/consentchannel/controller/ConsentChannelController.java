@@ -26,11 +26,9 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -91,7 +89,8 @@ public class ConsentChannelController {
             }
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append(extractQueryString(queryString, "redirect_uri")).append("?scope=accounts");
-            String authCode = authorizationCode();
+            String accessToken = getAccessToken();
+            String authCode = authorizationCode(accessToken);
             stringBuilder.append("&code=").append(authCode);
             stringBuilder.append("&state=").append(UUID.randomUUID().toString());
             stringBuilder.append("&id_token=").append(ID_TOKEN);
@@ -249,25 +248,34 @@ public class ConsentChannelController {
         }
 
     }
-    private String authorizationCode() throws Exception {
+    private String authorizationCode(String accessToken) throws Exception {
 
         UriComponentsBuilder uriComponentsBuilder =
-                UriComponentsBuilder.fromHttpUrl(credentialContext.getOauthUri());
+                UriComponentsBuilder.fromHttpUrl(credentialContext.getOauthUri() + "/authorization.oauth2");
 
         URI authCodeURI = uriComponentsBuilder.build().toUri();
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add("client_id", "tpp1");
+        parameters.add("client_secret", "2Federate");
+        parameters.add("response_type", "code");
+
         HttpHeaders headers = new HttpHeaders();
-        HttpEntity<JsonNode> request = new HttpEntity<>(headers);
+        headers.setBearerAuth(accessToken);
+//        HttpEntity<JsonNode> request = new HttpEntity<>(headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(parameters, headers);
 
         try {
+            LOGGER.info("uri [{}], request [{}]", authCodeURI, request);
 
-            ResponseEntity<ObjectNode> response =
-                    restTemplate.exchange(authCodeURI, HttpMethod.GET, request, ObjectNode.class);
+            ResponseEntity<String> response =
+                    restTemplate.exchange(authCodeURI, HttpMethod.POST, request, String.class);
 
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                LOGGER.info("found the consent in consent management");
+                LOGGER.info("get the auth code [{}]", response.getBody());
                 //@TODO return auth code
-                return response.getBody().get("auth_code").asText();
+//                return response.getBody().get("auth_code").asText();
+
             }
 
             return "ABCDEF";
@@ -275,10 +283,51 @@ public class ConsentChannelController {
         } catch (Exception e) {
 //            LOGGER.error("Error:", e);
 //            throw new Exception("error to retrieve auth code");
-            LOGGER.info("cannot get a auth code");
-            return "ABCDEF";
+            LOGGER.error("cannot get a auth code", e);
+            return "ABCDEF12345";
         }
 
     }
 
+
+    private String getAccessToken() throws Exception {
+
+        UriComponentsBuilder uriComponentsBuilder =
+                UriComponentsBuilder.fromHttpUrl(credentialContext.getOauthUri() + "/token.oauth2");
+
+        URI authCodeURI = uriComponentsBuilder.build().toUri();
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add("scope", "accounts");
+        parameters.add("grant_type", "client_credentials");
+//        parameters.add("response_type", "code");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setBasicAuth("tpp1", "2Federate");
+//        HttpEntity<JsonNode> request = new HttpEntity<>(headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(parameters, headers);
+
+        try {
+
+            LOGGER.info("uri [{}], request [{}]", authCodeURI, request);
+            ResponseEntity<JsonNode> response =
+                    restTemplate.exchange(authCodeURI, HttpMethod.POST, request, JsonNode.class);
+
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                LOGGER.info("get the access toke [{}]", response.getBody());
+                return response.getBody().get("access_token").asText();
+
+            }
+
+            return "ABCDEF";
+
+        } catch (Exception e) {
+//            LOGGER.error("Error:", e);
+//            throw new Exception("error to retrieve auth code");
+            LOGGER.error("cannot get access token", e);
+            return "ABCDEF12345";
+        }
+
+    }
 }
