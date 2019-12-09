@@ -74,6 +74,24 @@
 	</dependencies>
 
 	<build>
+<!--		<resources>-->
+<!--			<resource>-->
+<!--				<directory>src/webapp</directory>-->
+<!--				<filtering>true</filtering>-->
+<!--				<includes>-->
+<!--					<include>**/*.css</include>-->
+<!--					<include>**/*.js</include>-->
+<!--				</includes>-->
+<!--			</resource>-->
+<!--			<resource>-->
+<!--				<directory>src/resource</directory>-->
+<!--				<filtering>true</filtering>-->
+<!--				<includes>-->
+<!--					<include>**/*.css</include>-->
+<!--					<include>**/*.js</include>-->
+<!--				</includes>-->
+<!--			</resource>-->
+<!--		</resources>-->
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
