@@ -69,9 +69,9 @@ public class ConsentChannelController {
 
     @PostMapping("/consent/redirect")
     @ResponseBody
-    public ResponseEntity<?> redirect() {
-
-        LOGGER.info("redirect received ");
+    public ResponseEntity<?> redirect(@RequestParam("code") String code) {
+//        code=WrRTWUS1eVU9yYNY6LfGoKHc6pvx8wIAIPVhaXzO
+        LOGGER.info("redirect received [{}]", code);
         return ResponseEntity.ok("received");
     }
     /**
