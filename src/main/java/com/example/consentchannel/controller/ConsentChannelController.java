@@ -424,7 +424,7 @@ public class ConsentChannelController {
         try {
             idp();
         } catch (Exception e) {
-//            e.printStackTrace();
+            e.printStackTrace();
         }
 //        model.addAttribute("auth_code", "i7pqEXYHrni2COCXbtjIz9yJ9m0Y7xyr8MAu5dgE");
         model.addAttribute("auth_code", "TODO needs get auth code from PF");
