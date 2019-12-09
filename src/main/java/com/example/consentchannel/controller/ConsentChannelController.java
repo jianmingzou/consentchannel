@@ -66,6 +66,14 @@ public class ConsentChannelController {
         return ResponseEntity.ok(echo);
     }
 
+
+    @PostMapping("/consent/redirect")
+    @ResponseBody
+    public ResponseEntity<?> redirect() {
+
+        LOGGER.info("redirect received ");
+        return ResponseEntity.ok("received");
+    }
     /**
      * Init consent
      * ?correlation_id=5223927d-6cfe-4ecd-b73b-d8b0f0c54764 &query_string=client_id%253DSwCIxkpf8em1ZbS5CM7MRSh9PnheUNNd%2526scope%253Dopenid+accounts%2526redirect_uri%253Dhttp%253A%252F%252Flocalhost%253A8585%252FredirectMe%2526response_type%253Dcode+id_token%2526someOtherParam%253Dblahblah%2526request%253DeyJraWQiOiJzYW1wbGVUcHBLaWQiLCJhbGciOiJSUzI1NiJ9.eyJyZXNwb25zZV90eXBlIjoiY29kZSBpZF90b2tlbiIsImNsaWVudF9pZCI6IlN3Q0l4a3BmOGVtMVpiUzVDTTdNUlNoOVBuaGVVTk5kIiwiYXVkIjoiaHR0cHM6Ly9haWItcHJvZC1wcm9kLmFwaWdlZS5uZXQiLCJzY29wZSI6Im9wZW5pZCBhY2NvdW50cyIsInN0YXRlIjoiOWU3MjY3NDgtYzExOS00NmRkLTg0ZGMtMjQxY2MzOWQ2ZDdjIiwibm9uY2UiOiJmNWNjYWQ1Zi0yMzdkLTQzNTYtYmNiNi0yM2M2YmZmMTBhNDUiLCJtYXhfYWdlIjoiODY0MDAwMCIsImlhdCI6MTU3NDk0MzcxNCwicmVkaXJlY3RfdXJpIjoiaHR0cDovL2xvY2FsaG9zdDo4NTg1L3JlZGlyZWN0TWUiLCJjbGFpbXMiOnsidXNlcmluZm8iOnsib3BlbmJhbmtpbmdfaW50ZW50X2lkIjp7InZhbHVlIjoidXJuOmFpYjphcGlnYXRld2F5Om9wZW4tYmFua2luZzphaXNwOmFjY291bnQtYWNjZXNzLWNvbnNlbnRzOnYzLjE6MTE3ZDU0NDMtNGVkNS00Njg5LWE5MjMtNjAxMDk4ZmYyNzQ0IiwiZXNzZW50aWFsIjp0cnVlfX0sImlkX3Rva2VuIjp7Im9wZW5iYW5raW5nX2ludGVudF9pZCI6eyJ2YWx1ZSI6InVybjphaWI6YXBpZ2F0ZXdheTpvcGVuLWJhbmtpbmc6YWlzcDphY2NvdW50LWFjY2Vzcy1jb25zZW50czp2My4xOjExN2Q1NDQzLTRlZDUtNDY4OS1hOTIzLTYwMTA5OGZmMjc0NCIsImVzc2VudGlhbCI6dHJ1ZX0sImFjciI6eyJlc3NlbnRpYWwiOnRydWUsInZhbHVlcyI6WyJ1cm46YWliOmFwaWdhdGV3YXk6b3Blbi1iYW5raW5nOmFpc3A6YWNjb3VudC1hY2Nlc3MtY29uc2VudHM6djMuMToxMTdkNTQ0My00ZWQ1LTQ2ODktYTkyMy02MDEwOThmZjI3NDQiXX19fSwiZXhwIjoxNTc0OTQ3MzE0fQ.FsCGyN3O5GQ2DtjIHDQgNrqi2av3rzu2LJsWj5ZhYE5bDvGvyacn89kIeCZToDXQKGX_4LvTRWcto4jXISI8voyyBL9Prb4TDynlgXpOJ1PIV5Xs9NbkWNnJRuLWgShzw_OlNruZlD3AR61KbN9SvxLTin3ds_0DVwZX1FS0PgBz33LqWffhhKal0V4FUTqD1FUKMP6Q-8WqeyHOhCMqUqVM3S32tfin7RMODzZeS75_FZxgr199i8BVllgGBMx4nnvVwEL1P3SAa49H5OF4cvbsGvoj5TUXua31c4z1ximxCkhwx2-JBoQHtQ91fGm3hknDFxfg8mNEBJ6cRVZhWQ%2526state%253D9e726748-c119-46dd-84dc-241cc39d6d7c%2526nonce%253Df5ccad5f-237d-4356-bcb6-23c6bff10a45
@@ -90,7 +98,8 @@ public class ConsentChannelController {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append(extractQueryString(queryString, "redirect_uri")).append("?scope=accounts");
             String accessToken = getAccessToken();
-            String authCode = authorizationCode(accessToken);
+//            String authCode = authorizationCode(accessToken);
+            String authCode = exchangeAccessToken();
             stringBuilder.append("&code=").append(authCode);
             stringBuilder.append("&state=").append(UUID.randomUUID().toString());
             stringBuilder.append("&id_token=").append(ID_TOKEN);
@@ -258,6 +267,11 @@ public class ConsentChannelController {
         parameters.add("client_id", "tpp1");
         parameters.add("client_secret", "2Federate");
         parameters.add("response_type", "code");
+//        parameters.add("scope", "accounts");
+//        parameters.add("state",  UUID.randomUUID().toString());
+//        parameters.add("redirect_uri",  "https://google.com");
+//        yzfuIiL7thF6-f3y4qgNZQacTqN8g9Wf-m6fsuNJ
+
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -298,6 +312,7 @@ public class ConsentChannelController {
         URI authCodeURI = uriComponentsBuilder.build().toUri();
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
         parameters.add("scope", "accounts");
+//        parameters.add("grant_type", "client_credentials");
         parameters.add("grant_type", "client_credentials");
 //        parameters.add("response_type", "code");
 
@@ -330,4 +345,56 @@ public class ConsentChannelController {
         }
 
     }
+
+    private String exchangeAccessToken() throws Exception {
+
+        UriComponentsBuilder uriComponentsBuilder =
+                UriComponentsBuilder.fromHttpUrl(credentialContext.getOauthUri() + "/authorization.oauth2");
+
+        URI authCodeURI = uriComponentsBuilder.build().toUri();
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add("scope", "accounts");
+//        parameters.add("grant_type", "client_credentials");
+        parameters.add("grant_type", "authorization_code");
+        parameters.add("client_id", "tpp1");
+        parameters.add("client_secret", "2Federate");
+//        parameters.add("code", "yzfuIiL7thF6-f3y4qgNZQacTqN8g9Wf-m6fsuNJ");
+        parameters.add("code", "i7pqEXYHrni2COCXbtjIz9yJ9m0Y7xyr8MAu5dgE");
+        parameters.add("redirect_uri", "https://google.com");
+
+        HttpHeaders headers = new HttpHeaders();
+
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setBasicAuth("joe", "2Federate");
+//        HttpEntity<JsonNode> request = new HttpEntity<>(headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(parameters, headers);
+
+        try {
+
+            LOGGER.info("uri [{}], request [{}]", authCodeURI, request);
+            ResponseEntity<String> response =
+                    restTemplate.exchange(authCodeURI, HttpMethod.POST, request, String.class);
+
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                LOGGER.info("exchanged the access toke [{}]", response.getBody());
+//                return response.getBody().get("access_token").asText();uri [https://ec2-34-246-195-42.eu-west-1.compute.amazonaws.com:3000/as/authorization.oauth2], request [<{scope=[accounts], grant_type=[authorization_code], client_id=[tpp1], client_secret=[2Federate], code=[i7pqEXYHrni2COCXbtjIz9yJ9m0Y7xyr8MAu5dgE], redirect_uri=[https://google.com]},[Content-Type:"application/x-www-form-urlencoded", Authorization:"Basic am9lOjJGZWRlcmF0ZQ=="]>]
+
+            }
+            else {
+                LOGGER.info("exchanged the status [{}], response [{}]", response.getStatusCode(), response.getBody());
+            }
+
+            return "ABCDEF";
+
+        } catch (Exception e) {
+//            LOGGER.error("Error:", e);
+//            throw new Exception("error to retrieve auth code");
+            LOGGER.error("cannot get access token", e);
+            return "ABCDEF12345";
+        }
+
+    }
 }
+
+

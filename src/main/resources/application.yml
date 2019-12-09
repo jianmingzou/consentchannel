@@ -15,3 +15,13 @@ spring:
   application:
     name: consentchannel
 
+
+#  logging.level.org.springframework.web.filter.CommonsRequestLoggingFilter=
+#  DEBUG
+logging:
+  level:
+    org:
+      springframework:
+        web:
+          filter:
+            CommonsRequestLoggingFilter: DEBUG
