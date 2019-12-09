@@ -5,16 +5,18 @@ import com.example.consentchannel.model.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLDecoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import javax.websocket.server.PathParam;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
@@ -23,10 +25,14 @@ import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +40,9 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-@RestController
+import javax.net.ssl.*;
+
+@Controller
 public class ConsentChannelController {
 
 
@@ -67,11 +75,17 @@ public class ConsentChannelController {
     }
 
 
-    @PostMapping("/consent/redirect")
+    @GetMapping("/consent/redirect")
     @ResponseBody
     public ResponseEntity<?> redirect(@RequestParam("code") String code) {
-//        code=WrRTWUS1eVU9yYNY6LfGoKHc6pvx8wIAIPVhaXzO
-        LOGGER.info("redirect received [{}]", code);
+       LOGGER.info("redirect received [{}]", code);
+        try {
+            String accessToken = exchangeAccessToken(code);
+            LOGGER.info("exchanged access token [{}]", accessToken);
+        }
+        catch (Exception e) {
+            LOGGER.error("cannot exchange token:" , e);
+        }
         return ResponseEntity.ok("received");
     }
     /**
@@ -96,10 +110,10 @@ public class ConsentChannelController {
                 LOGGER.info("could not found consent by [{}]", consentId);
             }
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append(extractQueryString(queryString, "redirect_uri")).append("?scope=accounts");
+            stringBuilder.append(extractQueryString(queryString, "https://ec2-34-246-195-42.eu-west-1.compute.amazonaws.com:3000/consent/auth")).append("?scope=accounts");
             String accessToken = getAccessToken();
-//            String authCode = authorizationCode(accessToken);
-            String authCode = exchangeAccessToken();
+//            String authCode = authorizationCode();
+            String authCode = "i7pqEXYHrni2COCXbtjIz9yJ9m0Y7xyr8MAu5dgE";
             stringBuilder.append("&code=").append(authCode);
             stringBuilder.append("&state=").append(UUID.randomUUID().toString());
             stringBuilder.append("&id_token=").append(ID_TOKEN);
@@ -113,12 +127,25 @@ public class ConsentChannelController {
         }
     }
 
+
+    /**
+     * Init consent
+     * ?correlation_id=5223927d-6cfe-4ecd-b73b-d8b0f0c54764 &query_string=client_id%253DSwCIxkpf8em1ZbS5CM7MRSh9PnheUNNd%2526scope%253Dopenid+accounts%2526redirect_uri%253Dhttp%253A%252F%252Flocalhost%253A8585%252FredirectMe%2526response_type%253Dcode+id_token%2526someOtherParam%253Dblahblah%2526request%253DeyJraWQiOiJzYW1wbGVUcHBLaWQiLCJhbGciOiJSUzI1NiJ9.eyJyZXNwb25zZV90eXBlIjoiY29kZSBpZF90b2tlbiIsImNsaWVudF9pZCI6IlN3Q0l4a3BmOGVtMVpiUzVDTTdNUlNoOVBuaGVVTk5kIiwiYXVkIjoiaHR0cHM6Ly9haWItcHJvZC1wcm9kLmFwaWdlZS5uZXQiLCJzY29wZSI6Im9wZW5pZCBhY2NvdW50cyIsInN0YXRlIjoiOWU3MjY3NDgtYzExOS00NmRkLTg0ZGMtMjQxY2MzOWQ2ZDdjIiwibm9uY2UiOiJmNWNjYWQ1Zi0yMzdkLTQzNTYtYmNiNi0yM2M2YmZmMTBhNDUiLCJtYXhfYWdlIjoiODY0MDAwMCIsImlhdCI6MTU3NDk0MzcxNCwicmVkaXJlY3RfdXJpIjoiaHR0cDovL2xvY2FsaG9zdDo4NTg1L3JlZGlyZWN0TWUiLCJjbGFpbXMiOnsidXNlcmluZm8iOnsib3BlbmJhbmtpbmdfaW50ZW50X2lkIjp7InZhbHVlIjoidXJuOmFpYjphcGlnYXRld2F5Om9wZW4tYmFua2luZzphaXNwOmFjY291bnQtYWNjZXNzLWNvbnNlbnRzOnYzLjE6MTE3ZDU0NDMtNGVkNS00Njg5LWE5MjMtNjAxMDk4ZmYyNzQ0IiwiZXNzZW50aWFsIjp0cnVlfX0sImlkX3Rva2VuIjp7Im9wZW5iYW5raW5nX2ludGVudF9pZCI6eyJ2YWx1ZSI6InVybjphaWI6YXBpZ2F0ZXdheTpvcGVuLWJhbmtpbmc6YWlzcDphY2NvdW50LWFjY2Vzcy1jb25zZW50czp2My4xOjExN2Q1NDQzLTRlZDUtNDY4OS1hOTIzLTYwMTA5OGZmMjc0NCIsImVzc2VudGlhbCI6dHJ1ZX0sImFjciI6eyJlc3NlbnRpYWwiOnRydWUsInZhbHVlcyI6WyJ1cm46YWliOmFwaWdhdGV3YXk6b3Blbi1iYW5raW5nOmFpc3A6YWNjb3VudC1hY2Nlc3MtY29uc2VudHM6djMuMToxMTdkNTQ0My00ZWQ1LTQ2ODktYTkyMy02MDEwOThmZjI3NDQiXX19fSwiZXhwIjoxNTc0OTQ3MzE0fQ.FsCGyN3O5GQ2DtjIHDQgNrqi2av3rzu2LJsWj5ZhYE5bDvGvyacn89kIeCZToDXQKGX_4LvTRWcto4jXISI8voyyBL9Prb4TDynlgXpOJ1PIV5Xs9NbkWNnJRuLWgShzw_OlNruZlD3AR61KbN9SvxLTin3ds_0DVwZX1FS0PgBz33LqWffhhKal0V4FUTqD1FUKMP6Q-8WqeyHOhCMqUqVM3S32tfin7RMODzZeS75_FZxgr199i8BVllgGBMx4nnvVwEL1P3SAa49H5OF4cvbsGvoj5TUXua31c4z1ximxCkhwx2-JBoQHtQ91fGm3hknDFxfg8mNEBJ6cRVZhWQ%2526state%253D9e726748-c119-46dd-84dc-241cc39d6d7c%2526nonce%253Df5ccad5f-237d-4356-bcb6-23c6bff10a45
+     */
+    @GetMapping("/consent/auth")
+    public String authConsent(Model model) {
+
+        LOGGER.info("correlation_id [{}] and query_string [{}], intent id [{}]");
+//        String response = "{\"openbanking_intent_id\":\"1\",\"sub\":\"tester\"}";
+        return "user";
+
+    }
     protected String extractQueryString(String queryString, String extractKey)
             throws MalformedURLException, UnsupportedEncodingException {
 
         String decodedRequest = URLDecoder.decode(queryString, StandardCharsets.UTF_8.name());
         LOGGER.info("decoded request: [{}]", decodedRequest);
-
+//        http://localhost:8090http://localhost:8090
         Map<String, String> queryPairs = new LinkedHashMap<>();
 
         String[] pairs = decodedRequest.split("&");
@@ -257,39 +284,36 @@ public class ConsentChannelController {
         }
 
     }
-    private String authorizationCode(String accessToken) throws Exception {
+
+    private String exchangeAccessToken(String authCode) throws Exception {
 
         UriComponentsBuilder uriComponentsBuilder =
-                UriComponentsBuilder.fromHttpUrl(credentialContext.getOauthUri() + "/authorization.oauth2");
+                UriComponentsBuilder.fromHttpUrl(credentialContext.getOauthUri() + "/token.oauth2");
 
         URI authCodeURI = uriComponentsBuilder.build().toUri();
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
         parameters.add("client_id", "tpp1");
         parameters.add("client_secret", "2Federate");
-        parameters.add("response_type", "code");
-//        parameters.add("scope", "accounts");
-//        parameters.add("state",  UUID.randomUUID().toString());
-//        parameters.add("redirect_uri",  "https://google.com");
-//        yzfuIiL7thF6-f3y4qgNZQacTqN8g9Wf-m6fsuNJ
-
+        parameters.add("grant_type", "authorization_code");
+        parameters.add("code", authCode);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
+        headers.setBasicAuth("tpp1", "2Federate");
 //        HttpEntity<JsonNode> request = new HttpEntity<>(headers);
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(parameters, headers);
 
         try {
             LOGGER.info("uri [{}], request [{}]", authCodeURI, request);
 
-            ResponseEntity<String> response =
-                    restTemplate.exchange(authCodeURI, HttpMethod.POST, request, String.class);
+            ResponseEntity<JsonNode> response =
+                    restTemplate.exchange(authCodeURI, HttpMethod.POST, request, JsonNode.class);
 
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                LOGGER.info("get the auth code [{}]", response.getBody());
+                LOGGER.info("exchange token response [{}]", response.getBody());
                 //@TODO return auth code
 //                return response.getBody().get("auth_code").asText();
-
+                return response.getBody().get("access_token").asText();
             }
 
             return "ABCDEF";
@@ -346,21 +370,21 @@ public class ConsentChannelController {
 
     }
 
-    private String exchangeAccessToken() throws Exception {
+    private String authorizationCode() throws Exception {
 
         UriComponentsBuilder uriComponentsBuilder =
                 UriComponentsBuilder.fromHttpUrl(credentialContext.getOauthUri() + "/authorization.oauth2");
 
         URI authCodeURI = uriComponentsBuilder.build().toUri();
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-        parameters.add("scope", "accounts");
+        parameters.add("scope", "openid");
 //        parameters.add("grant_type", "client_credentials");
         parameters.add("grant_type", "authorization_code");
         parameters.add("client_id", "tpp1");
         parameters.add("client_secret", "2Federate");
 //        parameters.add("code", "yzfuIiL7thF6-f3y4qgNZQacTqN8g9Wf-m6fsuNJ");
         parameters.add("code", "i7pqEXYHrni2COCXbtjIz9yJ9m0Y7xyr8MAu5dgE");
-        parameters.add("redirect_uri", "https://google.com");
+        parameters.add("redirect_uri", "https://ec2-34-246-195-42.eu-west-1.compute.amazonaws.com:3000/consent/redirect");
 
         HttpHeaders headers = new HttpHeaders();
 
@@ -368,7 +392,6 @@ public class ConsentChannelController {
         headers.setBasicAuth("joe", "2Federate");
 //        HttpEntity<JsonNode> request = new HttpEntity<>(headers);
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(parameters, headers);
-
         try {
 
             LOGGER.info("uri [{}], request [{}]", authCodeURI, request);
@@ -388,13 +411,116 @@ public class ConsentChannelController {
             return "ABCDEF";
 
         } catch (Exception e) {
-//            LOGGER.error("Error:", e);
+//            LOGGER.error("Error:", e);submit
 //            throw new Exception("error to retrieve auth code");
             LOGGER.error("cannot get access token", e);
             return "ABCDEF12345";
         }
 
     }
+
+    @PostMapping("/consent/internal/auth")
+    public String handleRedirectPost(Model model) {
+        try {
+            idp();
+        } catch (Exception e) {
+//            e.printStackTrace();
+        }
+//        model.addAttribute("auth_code", "i7pqEXYHrni2COCXbtjIz9yJ9m0Y7xyr8MAu5dgE");
+        model.addAttribute("auth_code", "TODO needs get auth code from PF");
+        return "result";
+    }
+
+    private void idp()
+            throws Exception
+    {
+        // Create a dummy X509TrustManager that will trust any server certificate
+        // This is for example only and should not be used in production
+        X509TrustManager tm = new X509TrustManager()
+        {
+            public void checkClientTrusted(X509Certificate[] x509Certs, String s)
+                    throws CertificateException
+            {
+
+
+            }
+
+
+            public void checkServerTrusted(X509Certificate[] x509Certs, String s)
+                    throws CertificateException
+            {
+
+
+            }
+
+
+            public X509Certificate[] getAcceptedIssuers()
+            {
+                return new X509Certificate[0];
+            }
+        };
+
+
+        // Use the trust manager to get an SSLSocketFactory
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, new TrustManager[] {tm}, null);
+        SSLSocketFactory socketFactory = sslContext.getSocketFactory();
+
+
+        // Create a JSON Object containing user attributes
+        JSONObject idpUserAttributes = new JSONObject();
+        idpUserAttributes.put("attribute1", "value1");
+        idpUserAttributes.put("attribute2", "value2");
+        idpUserAttributes.put("foo", "bar");
+        java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ");
+        idpUserAttributes.put("authnInst", df.format(new java.util.Date()));
+
+
+        // Drop the attributes into PingFederate
+//		String dropoffLocation = "https://ec2-52-19-213-41.eu-west-1.compute.amazonaws.com:9031/ext/ref/dropoff";
+        String dropoffLocation = "https://ec2-34-246-195-42.eu-west-1.compute.amazonaws.com:9031/ext/ref/dropoff";
+        System.out.println(dropoffLocation);
+        URL dropUrl = new URL(dropoffLocation);
+        URLConnection urlConnection = dropUrl.openConnection();
+//		String userCredentials = "joe:password";
+        String userCredentials = "tpp1:2Federate";
+        String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
+
+        HttpsURLConnection httpsURLConnection = (HttpsURLConnection)urlConnection;
+        httpsURLConnection.setSSLSocketFactory(socketFactory);
+        httpsURLConnection.setRequestProperty ("Authorization", basicAuth);
+        httpsURLConnection.setRequestProperty("ping.uname", "pingfederate");
+        httpsURLConnection.setRequestProperty("ping.pwd", "2Federate");
+        // ping.instanceId is optional and only needs to be specified if multiple instances of ReferenceId adapter are configured.
+        httpsURLConnection.setRequestProperty("ping.instanceId", "idpadapter");
+
+
+        System.out.println(httpsURLConnection.toString());
+        // Write the attributes in URL Connection, this example uses UTF-8 encoding
+        urlConnection.setDoOutput(true);
+        OutputStreamWriter outputStreamWriter = new
+                OutputStreamWriter(httpsURLConnection.getOutputStream(), "UTF-8");
+        idpUserAttributes.writeJSONString(outputStreamWriter);
+        outputStreamWriter.flush();
+        outputStreamWriter.close();
+
+
+        // Get the response and parse it into a JSON object
+        InputStream is = httpsURLConnection.getInputStream();
+        InputStreamReader streamReader = new InputStreamReader(is, "UTF-8");
+
+
+        JSONParser parser = new JSONParser();
+        JSONObject jsonRespObj = (JSONObject)parser.parse(streamReader);
+
+
+        // Grab the value of the reference value from the JSON Object. This value
+        // must be passed to PingFederate on resumePath as the parameter 'REF'
+        String referenceValue = (String)jsonRespObj.get("REF");
+        System.out.println("Reference ID = " + referenceValue);
+
+    }
+
 }
 
 
