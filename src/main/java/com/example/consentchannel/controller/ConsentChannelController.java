@@ -134,9 +134,7 @@ public class ConsentChannelController {
      */
     @GetMapping("/consent/auth")
     public String authConsent(Model model) {
-
-        LOGGER.info("correlation_id [{}] and query_string [{}], intent id [{}]");
-//        String response = "{\"openbanking_intent_id\":\"1\",\"sub\":\"tester\"}";
+        LOGGER.info("call auth consent");
         return "user";
 
     }
@@ -422,18 +420,16 @@ public class ConsentChannelController {
     @PostMapping("/consent/internal/auth")
     public String handleRedirectPost(Model model) {
         try {
-            idp();
+            String ref =idp();
+            model.addAttribute("ref_id", ref);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("call PF error: ", e);
+            model.addAttribute("ref_id", ExceptionUtils.getStackTrace(e));
         }
-//        model.addAttribute("auth_code", "i7pqEXYHrni2COCXbtjIz9yJ9m0Y7xyr8MAu5dgE");
-        model.addAttribute("auth_code", "TODO needs get auth code from PF");
         return "result";
     }
 
-    private void idp()
-            throws Exception
-    {
+    private String idp() throws Exception {
         // Create a dummy X509TrustManager that will trust any server certificate
         // This is for example only and should not be used in production
         X509TrustManager tm = new X509TrustManager()
@@ -469,33 +465,29 @@ public class ConsentChannelController {
 
         // Create a JSON Object containing user attributes
         JSONObject idpUserAttributes = new JSONObject();
-        idpUserAttributes.put("attribute1", "value1");
-        idpUserAttributes.put("attribute2", "value2");
-        idpUserAttributes.put("foo", "bar");
+        idpUserAttributes.put("sub", "username");
+        idpUserAttributes.put("openbanking_intent_id", "1");
+        idpUserAttributes.put("other", "other");
         java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ");
         idpUserAttributes.put("authnInst", df.format(new java.util.Date()));
 
-
         // Drop the attributes into PingFederate
-//		String dropoffLocation = "https://ec2-52-19-213-41.eu-west-1.compute.amazonaws.com:9031/ext/ref/dropoff";
         String dropoffLocation = "https://ec2-34-246-195-42.eu-west-1.compute.amazonaws.com:9031/ext/ref/dropoff";
-        System.out.println(dropoffLocation);
+
         URL dropUrl = new URL(dropoffLocation);
         URLConnection urlConnection = dropUrl.openConnection();
 //		String userCredentials = "joe:password";
-        String userCredentials = "tpp1:2Federate";
-        String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
 
         HttpsURLConnection httpsURLConnection = (HttpsURLConnection)urlConnection;
         httpsURLConnection.setSSLSocketFactory(socketFactory);
-        httpsURLConnection.setRequestProperty ("Authorization", basicAuth);
+//        httpsURLConnection.setRequestProperty ("Authorization", basicAuth);
         httpsURLConnection.setRequestProperty("ping.uname", "pingfederate");
         httpsURLConnection.setRequestProperty("ping.pwd", "2Federate");
-        // ping.instanceId is optional and only needs to be specified if multiple instances of ReferenceId adapter are configured.
-        httpsURLConnection.setRequestProperty("ping.instanceId", "idpadapter");
+        httpsURLConnection.setRequestProperty("ping.instanceId", "ConsentChannel");
+//        httpsURLConnection.setRequestProperty("ping.instanceId", "idpadapter");
 
+        LOGGER.info("http url connection {}", httpsURLConnection);
 
-        System.out.println(httpsURLConnection.toString());
         // Write the attributes in URL Connection, this example uses UTF-8 encoding
         urlConnection.setDoOutput(true);
         OutputStreamWriter outputStreamWriter = new
@@ -517,8 +509,8 @@ public class ConsentChannelController {
         // Grab the value of the reference value from the JSON Object. This value
         // must be passed to PingFederate on resumePath as the parameter 'REF'
         String referenceValue = (String)jsonRespObj.get("REF");
-        System.out.println("Reference ID = " + referenceValue);
-
+        LOGGER.info("Reference ID = {}", referenceValue);
+        return referenceValue;
     }
 
 }
