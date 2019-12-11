@@ -271,19 +271,19 @@
         </nav>
     </header>
 
-<!--    <div class="message">-->
-<!--&lt;!&ndash;        <a class="twitter-link" href="http://twitter.com/home/?status=I%20created%20a%20project%20with%20AWS%20CodeStar!%20%23AWS%20%23AWSCodeStar%20https%3A%2F%2Faws.amazon.com%2Fcodestar"><img src="img/tweet.svg" /></a>&ndash;&gt;-->
-<!--        <div class="text">-->
-<!--            <h1>User !</h1>-->
-<!--            <h2>You just log in !!</h2>-->
-<!--        </div>-->
-<!--    </div>-->
-    <form action="#" th:action="@{/consent/internal/auth}" method="post">
+    <!--    <div class="message">-->
+    <!--&lt;!&ndash;        <a class="twitter-link" href="http://twitter.com/home/?status=I%20created%20a%20project%20with%20AWS%20CodeStar!%20%23AWS%20%23AWSCodeStar%20https%3A%2F%2Faws.amazon.com%2Fcodestar"><img src="img/tweet.svg" /></a>&ndash;&gt;-->
+    <!--        <div class="text">-->
+    <!--            <h1>User !</h1>-->
+    <!--            <h2>You just log in !!</h2>-->
+    <!--        </div>-->
+    <!--    </div>-->
+    <form action="#" th:action="@{/consent/submit}" method="post">
         <div class="message">
-            <p><h2>User Name:</h2> <input type="text"/></p>
-            <p><h2>Password:</h2> <input type="text" /></p>
+            <p th:text="'authz Code: ' + ${code}" />
+
+
             <p></p>
-            <p><input type="submit" value="Log In" />
 
         </div>
 

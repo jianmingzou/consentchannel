@@ -197,6 +197,20 @@
                 display: none;
             }
         }
+        .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            -webkit-transition-duration: 0.4s; /* Safari */
+            transition-duration: 0.4s;
+        }
 
         .heaven-0 { background: #00000c; }
         .heaven-1 { background: linear-gradient(to bottom, #020111 85%, #191621 100%); }
@@ -271,29 +285,23 @@
         </nav>
     </header>
 
-    <!--    <div class="message">-->
-    <!--&lt;!&ndash;        <a class="twitter-link" href="http://twitter.com/home/?status=I%20created%20a%20project%20with%20AWS%20CodeStar!%20%23AWS%20%23AWSCodeStar%20https%3A%2F%2Faws.amazon.com%2Fcodestar"><img src="img/tweet.svg" /></a>&ndash;&gt;-->
-    <!--        <div class="text">-->
-    <!--            <h1>User !</h1>-->
-    <!--            <h2>You just log in !!</h2>-->
-    <!--        </div>-->
-    <!--    </div>-->
-    <form action="#" th:action="@{/consent/submit}" method="post">
+<!--    <div class="message">-->
+<!--&lt;!&ndash;        <a class="twitter-link" href="http://twitter.com/home/?status=I%20created%20a%20project%20with%20AWS%20CodeStar!%20%23AWS%20%23AWSCodeStar%20https%3A%2F%2Faws.amazon.com%2Fcodestar"><img src="img/tweet.svg" /></a>&ndash;&gt;-->
+<!--        <div class="text">-->
+<!--            <h1>User !</h1>-->
+<!--            <h2>You just log in !!</h2>-->
+<!--    th:object="${paobject}"-->
+<!--        </div>-->
+<!--    </div>-->
+    <form action="#" th:action="@{/consent/login}" method="post">
         <div class="message">
-<!--            <p th:text="'full_uri: ' + ${full_uri}" />-->
-
-            <h1>Account List</h1>
-            <!--    <p th:text="'content: ' + ${greeting.content}" />-->
-            <!--    <a href="/greeting">Submit another message</a>-->
-
-            <ul>
-                <li><h3>Current Account : 12345678</h3></li>
-                <li><h2>Saving Account: 567893434</h2></li>
-                <li><h3>Credit Card: 78930434</h3></li>
-            </ul>
+<!--            <p th:text="${full_uri}" />-->
+<!--            <input type="text" th:field="*{fullUrl}" th:value="${full_uri}">-->
+            <p><h2>User Name:</h2> <input type="text"/></p>
+            <p><h2>Password:</h2> <input type="text" /></p>
             <p></p>
-            <p><input type="submit" value="Authorise" />
-
+<!--            <p><input type="submit" value="Log In" />-->
+                <button class="button" type="submit" value="Log In">Log In</button>
         </div>
 
     </form>
